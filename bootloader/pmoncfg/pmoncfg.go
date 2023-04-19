@@ -34,12 +34,19 @@ type PmonCfg struct {
 const recoveryTitleSuffix = " # ab-recovery"
 const kernelPathPrefix = "/dev/fs/ext2@wd0"
 
-func ParsePmonCfgFile(filename string) (*PmonCfg, error) {
+func ParsePmonCfgFile(filename string) (cfg *PmonCfg, err error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() {
+		closeErr := f.Close()
+		if err == nil {
+			err = closeErr
+		} else {
+			log.Printf("ParsePmonCfgFile %v %v", f.Name(), closeErr)
+		}
+	}()
 
 	cfg := &PmonCfg{}
 

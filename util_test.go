@@ -11,12 +11,12 @@ import (
 	"path/filepath"
 	"syscall"
 	"testing"
-
+	"log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestUtilLog(t *testing.T) {
+func TestUtilLog(t *testing.T) (err error){
 	// 重定向日志到临时文件
 	testDataPath := "./TemporaryTestDataDirectoryNeedDelete"
 	err := os.Mkdir(testDataPath, 0777)
@@ -27,7 +27,14 @@ func TestUtilLog(t *testing.T) {
 	}()
 	tmpfile, err := ioutil.TempFile(testDataPath, "test.log")
 	require.NoError(t, err)
-	defer tmpfile.Close()
+	defer func() {
+		closeErr := tmpfile.Close()
+		if err == nil {
+			err = closeErr
+		} else {
+			log.Printf("TestUtilLog %v %v", tmpfile.Name(), closeErr)
+		}
+	}()
 
 	os.Stdout = tmpfile
 	os.Stderr = tmpfile
@@ -44,6 +51,7 @@ func TestUtilLog(t *testing.T) {
 	require.NoError(t, err)
 	// logWarningf会补\n
 	assert.Equal(t, testData+"\n", string(logData))
+	return
 }
 
 func TestUtilArch(t *testing.T) {

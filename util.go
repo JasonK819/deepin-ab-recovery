@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"strings"
 	"syscall"
+	"log"
 	"time"
 
 	"github.com/linuxdeepin/go-lib/strv"
@@ -107,12 +108,19 @@ func runUpdateGrub(envVars []string) error {
 	return cmd.Run()
 }
 
-func writeExcludeFile(excludeItems []string) (string, error) {
+func writeExcludeFile(excludeItems []string) (str string, err error) {
 	fh, err := ioutil.TempFile("", "deepin-recovery-")
 	if err != nil {
 		return "", err
 	}
-	defer fh.Close()
+	defer func() {
+		closeErr := fh.Close()
+		if err == nil {
+			err = closeErr
+		} else {
+			log.Printf("writeExcludeFile %v %v", fh.Name(), closeErr)
+		}
+	}()
 
 	var buf bytes.Buffer
 	for _, item := range excludeItems {
